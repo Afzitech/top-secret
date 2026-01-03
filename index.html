@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL_OVERRIDE_V2.0</title>
+    <title>TERMINAL_OVERRIDE_V3.0</title>
     <style>
         body { background-color: #000; color: #33ff33; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
         #game-container { width: 85%; max-width: 600px; border: 2px solid #33ff33; padding: 30px; background: rgba(0, 15, 0, 0.95); z-index: 10; position: relative; box-shadow: 0 0 20px #00ff00; }
-        canvas { position: fixed; top: 0; left: 0; z-index: 1; opacity: 0.6; }
+        canvas { position: fixed; top: 0; left: 0; z-index: 1; }
         input { background: transparent; border: none; color: #33ff33; font-family: 'Courier New', monospace; font-size: 1.2rem; width: 100%; outline: none; caret-color: white; }
         .error { color: #ff3333; font-weight: bold; }
         .system-msg { color: #888; font-size: 0.9rem; }
@@ -41,7 +41,7 @@
     const canvas = document.getElementById('matrix-canvas');
     let currentLevel = 1;
 
-    // --- YOUR SECRETS (Edit these!) ---
+    // --- CONFIGURATION: CHANGE THESE ANSWERS ---
     const LVL1_ANSWER = "taco"; 
     const LVL2_ANSWER = "1024"; 
     const LVL3_ANSWER = "bff";
@@ -83,31 +83,54 @@
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ$@#%";
+        
+        const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const fontSize = 18;
-        const columns = canvas.width / fontSize;
-        const drops = Array(Math.floor(columns)).fill(1);
+        const columns = Math.floor(canvas.width / fontSize);
+        const drops = Array(columns).fill(1);
 
         function draw() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            // Faint trail effect
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#004400";
+
             ctx.font = fontSize + "px Courier New";
 
             for (let i = 0; i < drops.length; i++) {
                 const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                ctx.fillStyle = "#00FF41"; // Neon Matrix Green
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
                 drops[i]++;
             }
 
-            // Pulsing Secret Code
-            const pulse = Math.sin(Date.now() / 300) > 0 ? "#FFD700" : "#00FF00";
+            // THE KEY BOX (Drawn on top every frame)
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            ctx.fillStyle = "black";
+            ctx.fillRect(centerX - 100, centerY - 30, 200, 60);
+            ctx.strokeStyle = "#FFD700";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(centerX - 100, centerY - 30, 200, 60);
+
+            const pulse = Math.sin(Date.now() / 300) > 0 ? "#FFD700" : "#FFFFFF";
             ctx.fillStyle = pulse;
-            ctx.font = "bold 35px Courier New";
-            ctx.fillText(`KEY: ${LVL2_ANSWER}`, canvas.width / 2 - 80, canvas.height / 2);
+            ctx.font = "bold 30px Courier New";
+            ctx.textAlign = "center";
+            ctx.fillText(`KEY: ${LVL2_ANSWER}`, centerX, centerY + 10);
+            ctx.textAlign = "start";
         }
-        setInterval(draw, 60); // Slower rain
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        setInterval(draw, 50); 
     }
 
     function startLevel3() {
@@ -117,7 +140,7 @@
             <p>[SUCCESS] FINAL ENCRYPTION DETECTED.</p>
             <p><strong>> LEVEL 3: BINARY DECODER</strong></p>
             <p>The code spells a 3-letter word. What is it?</p>
-            <p style="color: #00FF00; font-size: 1.4rem; letter-spacing: 5px;">01000010 01000110 01000110</p>
+            <p style="color: #00FF00; font-size: 1.4rem; letter-spacing: 5px; font-weight: bold;">01000010 01000110 01000110</p>
             <p class="system-msg">(Hint: 01000010=B, 01000110=F)</p>
         `;
     }
@@ -128,13 +151,13 @@
             <h1 class="prize-text">🔓 SYSTEM OVERRIDE COMPLETE</h1>
             <p style="text-align: center;">Access Granted to Personal Archives...</p>
             <hr style="border: 1px solid #33ff33;">
-            <p style="text-align: center; font-size: 1.2rem;">
+            <p style="text-align: center; font-size: 1.2rem; line-height: 1.5;">
                 "You cracked the hardest encryption I have! <br><br> 
-                Happy Birthday / Happy Friendship Day! <br> 
-                You are my favorite person to code with."
+                Happy Birthday! You're an absolute legend. <br> 
+                Thanks for being my best friend."
             </p>
             <div style="text-align: center; margin-top: 20px;">
-                <p class="system-msg">[REWARD_FILE.JPG UNLOCKED]</p>
+                <p class="system-msg">[ENCRYPTION_REMOVED_SUCCESSFULLY]</p>
             </div>
         `;
         document.body.style.backgroundColor = "#001a00";
