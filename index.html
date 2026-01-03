@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TERMINAL_OVERRIDE_V1.0</title>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #33ff33;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            text-shadow: 0 0 5px #33ff33;
+        }
+
+        #terminal {
+            width: 80%;
+            max-width: 600px;
+            border: 1px solid #33ff33;
+            padding: 20px;
+            background: rgba(0, 20, 0, 0.9);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            background-color: #33ff33;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        input {
+            background: transparent;
+            border: none;
+            color: #33ff33;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            width: 100%;
+            outline: none;
+            margin-top: 10px;
+        }
+
+        .system-msg { color: #888; font-size: 0.8rem; }
+        .error { color: #ff3333; text-shadow: 0 0 5px #ff3333; }
+    </style>
+</head>
+<body>
+
+<div id="terminal">
+    <div id="output">
+        <p class="system-msg">[SYSTEM] INITIALIZING SECURE CONNECTION...</p>
+        <p class="system-msg">[SYSTEM] FIREWALL ACTIVE. ENCRYPTION LEVEL: MAXIMUM.</p>
+        <p><strong> > CHALLENGE 01: IDENTITY VERIFICATION</strong></p>
+        <p>To proceed, enter the name of the place where we had that "disastrous" lunch in 2023:</p>
+    </div>
+    <div id="input-line">
+        <span>> </span><input type="text" id="user-input" autocomplete="off" autofocus>
+    </div>
+</div>
+
+<script>
+    const input = document.getElementById('user-input');
+    const output = document.getElementById('output');
+
+    // CONFIGURATION: Set the secret answer here!
+    const SECRET_ANSWER = "taco bell"; 
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const val = input.value.toLowerCase().trim();
+            handleInput(val);
+            input.value = '';
+        }
+    });
+
+    function handleInput(val) {
+        if (val === SECRET_ANSWER) {
+            addText("<p class='system-msg'>[SUCCESS] ACCESS GRANTED. DECRYPTING NEXT LAYER...</p>");
+            setTimeout(() => {
+                // Here is where you'd redirect to "Level 2" or change the content
+                alert("ACCESS GRANTED! Ready for Level 2?");
+            }, 1000);
+        } else {
+            addText("<p class='error'>> [ERROR] INVALID CREDENTIALS. ACCESS DENIED.</p>");
+        }
+    }
+
+    function addText(html) {
+        output.innerHTML += html;
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+</script>
+
+</body>
+</html>
