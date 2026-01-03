@@ -2,65 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TERMINAL_OVERRIDE_V1.0</title>
     <style>
-        body {
-            background-color: #0a0a0a;
-            color: #33ff33;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-            text-shadow: 0 0 5px #33ff33;
-        }
-
-        #terminal {
-            width: 80%;
-            max-width: 600px;
-            border: 1px solid #33ff33;
-            padding: 20px;
-            background: rgba(0, 20, 0, 0.9);
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
-        }
-
-        .cursor {
-            display: inline-block;
-            width: 10px;
-            background-color: #33ff33;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            50% { opacity: 0; }
-        }
-
-        input {
-            background: transparent;
-            border: none;
-            color: #33ff33;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1.1rem;
-            width: 100%;
-            outline: none;
-            margin-top: 10px;
-        }
-
-        .system-msg { color: #888; font-size: 0.8rem; }
-        .error { color: #ff3333; text-shadow: 0 0 5px #ff3333; }
+        body { background-color: #000; color: #33ff33; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        #game-container { width: 80%; max-width: 600px; border: 1px solid #33ff33; padding: 20px; background: rgba(0, 20, 0, 0.9); z-index: 10; position: relative; }
+        canvas { position: fixed; top: 0; left: 0; z-index: 1; }
+        input { background: transparent; border: none; color: #33ff33; font-family: 'Courier New', monospace; font-size: 1.2rem; width: 100%; outline: none; }
+        .error { color: #ff3333; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div id="terminal">
+<canvas id="matrix-canvas" class="hidden"></canvas>
+
+<div id="game-container">
     <div id="output">
-        <p class="system-msg">[SYSTEM] INITIALIZING SECURE CONNECTION...</p>
-        <p class="system-msg">[SYSTEM] FIREWALL ACTIVE. ENCRYPTION LEVEL: MAXIMUM.</p>
-        <p><strong> > CHALLENGE 01: IDENTITY VERIFICATION</strong></p>
-        <p>To proceed, enter the name of the place where we had that "disastrous" lunch in 2023:</p>
+        <p>[SYSTEM] INITIALIZING SECURE CONNECTION...</p>
+        <p><strong>> LEVEL 1: IDENTITY VERIFICATION</strong></p>
+        <p>Enter our secret "inside joke" word to bypass the firewall:</p>
     </div>
     <div id="input-line">
         <span>> </span><input type="text" id="user-input" autocomplete="off" autofocus>
@@ -70,35 +31,81 @@
 <script>
     const input = document.getElementById('user-input');
     const output = document.getElementById('output');
+    const container = document.getElementById('game-container');
+    const canvas = document.getElementById('matrix-canvas');
+    let currentLevel = 1;
 
-    // CONFIGURATION: Set the secret answer here!
-    const SECRET_ANSWER = "taco bell"; 
+    // --- CONFIGURATION ---
+    const LVL1_ANSWER = "taco"; // Change this!
+    const LVL2_ANSWER = "1998"; // Change this (The hidden code in the rain)
 
-    input.addEventListener('keydown', function(e) {
+    input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const val = input.value.toLowerCase().trim();
-            handleInput(val);
             input.value = '';
+            checkAnswer(val);
         }
     });
 
-    function handleInput(val) {
-        if (val === SECRET_ANSWER) {
-            addText("<p class='system-msg'>[SUCCESS] ACCESS GRANTED. DECRYPTING NEXT LAYER...</p>");
-            setTimeout(() => {
-                // Here is where you'd redirect to "Level 2" or change the content
-                alert("ACCESS GRANTED! Ready for Level 2?");
-            }, 1000);
+    function checkAnswer(val) {
+        if (currentLevel === 1 && val === LVL1_ANSWER) {
+            startLevel2();
+        } else if (currentLevel === 2 && val === LVL2_ANSWER) {
+            startLevel3();
         } else {
-            addText("<p class='error'>> [ERROR] INVALID CREDENTIALS. ACCESS DENIED.</p>");
+            output.innerHTML += `<p class="error">> [ERROR] ACCESS DENIED</p>`;
         }
     }
 
-    function addText(html) {
-        output.innerHTML += html;
-        window.scrollTo(0, document.body.scrollHeight);
+    function startLevel2() {
+        currentLevel = 2;
+        output.innerHTML = `
+            <p>[SUCCESS] LOADING LEVEL 2: THE MATRIX STREAM</p>
+            <p><strong>TASK:</strong> A 4-digit code is hidden in the falling data. Find it and enter it below.</p>
+        `;
+        canvas.classList.remove('hidden');
+        initMatrix();
+    }
+
+    function initMatrix() {
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$@#%";
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function draw() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#0F0";
+            ctx.font = fontSize + "px arial";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+            // THE HIDDEN CODE
+            ctx.fillStyle = "#FFD700";
+            ctx.fillText(LVL2_ANSWER, canvas.width / 2, canvas.height / 2);
+        }
+        setInterval(draw, 35);
+    }
+
+    function startLevel3() {
+        currentLevel = 3;
+        canvas.classList.add('hidden'); // Stop the rain
+        output.innerHTML = `
+            <p>[SUCCESS] FINAL ENCRYPTION LAYER DETECTED.</p>
+            <p><strong>> LEVEL 3: BINARY DECODER</strong></p>
+            <p>Convert this binary to text:</p>
+            <p style="color: yellow; font-size: 1.5rem;">01000010 01000110 01000110</p>
+            <p>(Hint: Each block is a letter. 01000010 = B, 01000110 = F)</p>
+        `;
     }
 </script>
-
 </body>
 </html>
