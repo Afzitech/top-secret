@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL_OVERRIDE_V3.0</title>
+    <title>TERMINAL_OVERRIDE_V4.0</title>
     <style>
         body { background-color: #000; color: #33ff33; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
         #game-container { width: 85%; max-width: 600px; border: 2px solid #33ff33; padding: 30px; background: rgba(0, 15, 0, 0.95); z-index: 10; position: relative; box-shadow: 0 0 20px #00ff00; }
-        canvas { position: fixed; top: 0; left: 0; z-index: 1; }
-        input { background: transparent; border: none; color: #33ff33; font-family: 'Courier New', monospace; font-size: 1.2rem; width: 100%; outline: none; caret-color: white; }
+        input { background: transparent; border: none; color: #33ff33; font-family: 'Courier New', monospace; font-size: 1.2rem; width: 100%; outline: none; caret-color: white; margin-top: 10px; }
         .error { color: #ff3333; font-weight: bold; }
-        .system-msg { color: #888; font-size: 0.9rem; }
+        .system-msg { color: #888; font-size: 0.8rem; }
         .hidden { display: none; }
         .prize-text { color: #FFD700; text-shadow: 0 0 10px #FFD700; text-align: center; }
+        .matrix-text { color: #00FF41; font-size: 0.9rem; line-height: 1; opacity: 0.5; overflow: hidden; height: 100px; }
+        #key-display { color: #FFD700; font-size: 2rem; font-weight: bold; text-align: center; border: 1px solid #FFD700; padding: 10px; margin: 15px 0; display: none; background: rgba(255, 215, 0, 0.1); }
     </style>
 </head>
 <body>
-
-<canvas id="matrix-canvas" class="hidden"></canvas>
 
 <div id="game-container">
     <div id="output">
@@ -27,6 +26,7 @@
             <p><strong>> LEVEL 1: IDENTITY VERIFICATION</strong></p>
             <p>Enter our secret "inside joke" word to bypass the firewall:</p>
         </div>
+        <div id="key-display">KEY: 1024</div>
     </div>
     <div id="input-line">
         <span>> </span><input type="text" id="user-input" autocomplete="off" autofocus>
@@ -37,8 +37,7 @@
     const input = document.getElementById('user-input');
     const output = document.getElementById('output');
     const levelContent = document.getElementById('level-content');
-    const container = document.getElementById('game-container');
-    const canvas = document.getElementById('matrix-canvas');
+    const keyDisplay = document.getElementById('key-display');
     let currentLevel = 1;
 
     // --- CONFIGURATION: CHANGE THESE ANSWERS ---
@@ -72,82 +71,41 @@
     function startLevel2() {
         currentLevel = 2;
         levelContent.innerHTML = `
-            <p>[SUCCESS] LOADING LEVEL 2: DATA STREAM</p>
-            <p><strong>TASK:</strong> A 4-digit KEY is pulsing in the falling code. Find it and enter it below.</p>
+            <p>[SUCCESS] LEVEL 1 BYPASSED.</p>
+            <p>[SYSTEM] SCANNING DATA STREAM FOR HIDDEN KEYS...</p>
+            <div class="matrix-text" id="stream"></div>
         `;
-        canvas.classList.remove('hidden');
-        initMatrix();
-    }
-
-    function initMatrix() {
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
         
-        const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const fontSize = 18;
-        const columns = Math.floor(canvas.width / fontSize);
-        const drops = Array(columns).fill(1);
+        // Start showing the "moving" data stream
+        const stream = document.getElementById('stream');
+        setInterval(() => {
+            stream.innerText += Math.random().toString(36).substring(2, 15);
+            stream.scrollTop = stream.scrollHeight;
+        }, 50);
 
-        function draw() {
-            // Faint trail effect
-            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.font = fontSize + "px Courier New";
-
-            for (let i = 0; i < drops.length; i++) {
-                const text = letters.charAt(Math.floor(Math.random() * letters.length));
-                ctx.fillStyle = "#00FF41"; // Neon Matrix Green
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
-            }
-
-            // THE KEY BOX (Drawn on top every frame)
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            
-            ctx.fillStyle = "black";
-            ctx.fillRect(centerX - 100, centerY - 30, 200, 60);
-            ctx.strokeStyle = "#FFD700";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(centerX - 100, centerY - 30, 200, 60);
-
-            const pulse = Math.sin(Date.now() / 300) > 0 ? "#FFD700" : "#FFFFFF";
-            ctx.fillStyle = pulse;
-            ctx.font = "bold 30px Courier New";
-            ctx.textAlign = "center";
-            ctx.fillText(`KEY: ${LVL2_ANSWER}`, centerX, centerY + 10);
-            ctx.textAlign = "start";
-        }
-        
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
-        setInterval(draw, 50); 
+        // Make the KEY visible after 2 seconds so it feels like a "discovery"
+        setTimeout(() => {
+            keyDisplay.style.display = "block";
+            levelContent.innerHTML += `<p><strong>> KEY FOUND! Enter it below to proceed:</strong></p>`;
+        }, 2000);
     }
 
     function startLevel3() {
         currentLevel = 3;
-        canvas.classList.add('hidden'); 
+        keyDisplay.style.display = "none"; 
         levelContent.innerHTML = `
-            <p>[SUCCESS] FINAL ENCRYPTION DETECTED.</p>
+            <p>[SUCCESS] LEVEL 2 BYPASSED.</p>
             <p><strong>> LEVEL 3: BINARY DECODER</strong></p>
-            <p>The code spells a 3-letter word. What is it?</p>
-            <p style="color: #00FF00; font-size: 1.4rem; letter-spacing: 5px; font-weight: bold;">01000010 01000110 01000110</p>
+            <p>The final lock requires a 3-letter word. Convert the code:</p>
+            <p style="color: #00FF00; font-size: 1.4rem; letter-spacing: 5px; font-weight: bold; text-align:center;">01000010 01000110 01000110</p>
             <p class="system-msg">(Hint: 01000010=B, 01000110=F)</p>
         `;
     }
 
     function showPrize() {
         document.getElementById('input-line').classList.add('hidden');
-        container.innerHTML = `
+        levelContent.innerHTML = "";
+        output.innerHTML = `
             <h1 class="prize-text">🔓 SYSTEM OVERRIDE COMPLETE</h1>
             <p style="text-align: center;">Access Granted to Personal Archives...</p>
             <hr style="border: 1px solid #33ff33;">
