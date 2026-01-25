@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHANDANA_PROTOCOL_22</title>
+    <title>CHANDANA_PROTOCOL_V22</title>
     <style>
-        body { background-color: #0d000d; color: #ff66cc; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        #game-container { width: 90%; max-width: 700px; border: 2px solid #ff66cc; padding: 30px; background: rgba(10, 0, 10, 0.9); z-index: 10; position: relative; box-shadow: 0 0 25px #ff33aa; }
+        :root { --main: #ff66cc; --bg: #0d000d; }
+        body { background-color: var(--bg); color: var(--main); font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        #game-container { width: 90%; max-width: 700px; border: 2px solid var(--main); padding: 30px; background: rgba(10, 0, 10, 0.9); z-index: 10; position: relative; box-shadow: 0 0 25px #ff33aa; }
         canvas { position: fixed; top: 0; left: 0; z-index: 1; opacity: 0.3; }
-        input { background: transparent; border: none; color: #fff; font-family: 'Courier New', monospace; font-size: 1.2rem; width: 100%; outline: none; border-bottom: 1px solid #ff66cc; margin-top: 10px; }
-        .error { color: #ff3333; font-weight: bold; }
+        input { background: transparent; border: none; color: #fff; font-family: 'Courier New', monospace; font-size: 1.2rem; width: 100%; outline: none; border-bottom: 1px solid var(--main); margin-top: 10px; }
         .system-msg { color: #888; font-size: 0.8rem; }
-        .level-header { color: #00ffff; font-weight: bold; }
-        .prize-text { color: #fff; text-shadow: 0 0 10px #ff00ff; text-align: center; }
-        #output { min-height: 200px; }
+        .level-header { color: #00ffff; font-weight: bold; margin-bottom: 5px; }
+        .hidden { display: none !important; }
+        .btn-mash { background: var(--main); color: white; border: none; padding: 10px 20px; cursor: pointer; font-family: inherit; margin-top: 10px; }
+        #output { min-height: 250px; }
     </style>
 </head>
 <body>
@@ -22,116 +23,146 @@
 
 <div id="game-container">
     <div id="output"></div>
-    <div id="input-line">
-        <span>[APPU@TERMINAL] ~ > </span><input type="text" id="user-input" autocomplete="off" autofocus>
+    
+    <div id="input-area" class="input-line">
+        <span>[APPU@AUTH] ~ > </span><input type="text" id="user-input" autocomplete="off" autofocus>
+    </div>
+
+    <div id="click-area" class="hidden">
+        <button id="mash-btn" class="btn-mash">OVERRIDE SYSTEM</button>
+        <p id="mash-count" style="font-size: 0.8rem; color: #888;"></p>
     </div>
 </div>
 
 <script>
     const input = document.getElementById('user-input');
     const output = document.getElementById('output');
+    const inputArea = document.getElementById('input-area');
+    const clickArea = document.getElementById('click-area');
+    const mashBtn = document.getElementById('mash-btn');
+    
     let currentLevel = 0;
+    let clickCount = 0;
 
-    // --- CONFIGURATION: EDIT THESE 22 ANSWERS ---
+    /* --- LEVEL DEFINITIONS ---
+       type: "text" (standard riddle)
+       type: "glitch" (find number in matrix rain)
+       type: "click" (mash the button)
+    */
     const levels = [
-        { q: "INITIALIZING... IDENTIFY SUBJECT. (What does Appu call you?)", a: "coco" }, // or "senpai"
-        { q: "VERIFYING AGE... LEVEL 2: How many years have you graced this planet?", a: "22" },
-        { q: "MEMORIAL_LOG_03: What was our first inside joke word?", a: "taco" },
-        { q: "LEVEL 4: Fill in the blank: Best ____ Forever.", a: "friends" },
-        { q: "LEVEL 5: Binary challenge! 01000010 01000110 01000110", a: "bff" },
-        { q: "LEVEL 6: Enter the password found in the data stream (Look at the background!)", a: "1024" },
-        { q: "LEVEL 7: Which month were you born in?", a: "january" },
-        // Add more specific questions here...
-        { q: "LEVEL 21: Final check. Who is the best Senpai in the world?", a: "chandana" },
-        { q: "LEVEL 22: Type 'HAPPY BIRTHDAY' to unlock the core.", a: "happy birthday" }
+        { type: "text", q: "INITIALIZING... IDENTIFY SUBJECT. (What does Appu call you?)", a: "coco" },
+        { type: "text", q: "LEVEL 2: How many years of Senpai-energy have we reached today?", a: "22" },
+        { type: "click", q: "LEVEL 3: SYSTEM STUCK. Force override by clicking the button 22 times.", a: 22 },
+        { type: "text", q: "LEVEL 4: Binary Challenge. 01000010 01000110 01000110", a: "bff" },
+        { type: "glitch", q: "LEVEL 5: Look into the data stream. A 4-digit key is falling in CYAN.", a: "2004" },
+        { type: "text", q: "LEVEL 6: What was the name of that show we talked about?", a: "stranger things" },
+        // ... Add more until you hit 22!
     ];
 
-    // Dummy levels to fill up to 22 if you don't have 22 questions yet
+    // Helper to fill remaining levels for your test
     while(levels.length < 22) {
-        levels.splice(levels.length - 2, 0, { q: `SECURITY BYPASS LEVEL ${levels.length + 1}: Type 'pass'`, a: "pass" });
+        levels.push({ type: "text", q: `LEVEL ${levels.length + 1}: Security Bypass. Type 'pass'`, a: "pass" });
     }
 
-    function typeLine(text, className = "") {
+    async function loadLevel() {
+        output.innerHTML = `<p class="system-msg">[LEVEL ${currentLevel + 1}/22]</p>`;
+        const lvl = levels[currentLevel];
+        
+        await typeLine(`> ${lvl.q}`, "level-header");
+
+        // UI Logic based on type
+        if (lvl.type === "click") {
+            inputArea.classList.add('hidden');
+            clickArea.classList.remove('hidden');
+            clickCount = 0;
+            document.getElementById('mash-count').innerText = `Clicks: 0/${lvl.a}`;
+        } else {
+            inputArea.classList.remove('hidden');
+            clickArea.classList.add('hidden');
+            input.focus();
+        }
+    }
+
+    // Pattern Logic: Button Mash
+    mashBtn.onclick = () => {
+        clickCount++;
+        document.getElementById('mash-count').innerText = `Clicks: ${clickCount}/${levels[currentLevel].a}`;
+        if (clickCount >= levels[currentLevel].a) {
+            nextLevel();
+        }
+    };
+
+    // Pattern Logic: Text Entry
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const val = input.value.toLowerCase().trim();
+            if (val === levels[currentLevel].a.toLowerCase()) {
+                input.value = '';
+                nextLevel();
+            } else {
+                typeLine("[ERROR] DENIED", "error");
+            }
+        }
+    });
+
+    async function nextLevel() {
+        currentLevel++;
+        if (currentLevel >= 22) {
+            showWin();
+        } else {
+            loadLevel();
+        }
+    }
+
+    function typeLine(text, className) {
         const p = document.createElement('p');
         p.className = className;
         output.appendChild(p);
         let i = 0;
         return new Promise(res => {
-            function type() {
-                if (i < text.length) {
-                    p.innerHTML += text.charAt(i);
-                    i++;
-                    setTimeout(type, 20);
-                } else { res(); }
-            }
-            type();
+            const interval = setInterval(() => {
+                p.innerHTML += text.charAt(i);
+                i++;
+                if (i >= text.length) { clearInterval(interval); res(); }
+            }, 20);
         });
     }
 
-    async function updateLevel() {
-        output.innerHTML = `<p class="system-msg">[SYSTEM] ENCRYPTION LAYER ${currentLevel + 1}/22</p>`;
-        await typeLine(`> ${levels[currentLevel].q}`, "level-header");
-    }
-
-    input.addEventListener('keydown', async (e) => {
-        if (e.key === 'Enter') {
-            const val = input.value.toLowerCase().trim();
-            input.value = '';
-            
-            if (val === levels[currentLevel].a.toLowerCase()) {
-                currentLevel++;
-                if (currentLevel >= 22) {
-                    showFinalPrize();
-                } else {
-                    await typeLine("[SUCCESS] ACCESS GRANTED.", "system-msg");
-                    updateLevel();
-                }
-            } else {
-                const err = document.createElement('p');
-                err.className = 'error';
-                err.innerHTML = "> [ERROR] INCORRECT KEY. TRY AGAIN, COCO.";
-                output.appendChild(err);
-            }
-        }
-    });
-
-    function showFinalPrize() {
-        document.getElementById('input-line').style.display = 'none';
-        output.innerHTML = `
-            <div class="prize-text">
-                <h1>🔓 ACCESS GRANTED: THE HEART CORE</h1>
-                <hr>
-                <h2>HAPPY 22ND BIRTHDAY CHANDANA!</h2>
-                <p>From "Appu" with love.</p>
-                <p style="font-size: 0.8rem;">You are the best Senpai anyone could ask for.</p>
+    function showWin() {
+        document.getElementById('game-container').innerHTML = `
+            <div style="text-align:center">
+                <h1 style="color:white; text-shadow: 0 0 20px #ff00ff;">🔓 OVERRIDE COMPLETE</h1>
+                <p>Happy 22nd Birthday, Chandana!</p>
+                <p>You've successfully hacked into my heart (cheesy, I know).</p>
+                <p>- Appu</p>
             </div>
         `;
-        document.body.style.backgroundColor = "#220022";
     }
 
-    // Matrix Background (Pink themed)
+    // Matrix Background Logic
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    const letters = "CHANDANACOCO22APPU";
-    const fontSize = 16;
-    const columns = canvas.width / fontSize;
-    const drops = Array(Math.floor(columns)).fill(1);
+    const drops = Array(Math.floor(canvas.width / 16)).fill(1);
 
     function draw() {
         ctx.fillStyle = "rgba(13, 0, 13, 0.1)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#ff66cc";
-        ctx.font = fontSize + "px monospace";
+        
         for (let i = 0; i < drops.length; i++) {
-            const text = letters.charAt(Math.floor(Math.random() * letters.length));
-            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            const isSecret = levels[currentLevel]?.type === "glitch" && i === 10;
+            ctx.fillStyle = isSecret ? "#00ffff" : "#ff66cc";
+            ctx.font = isSecret ? "bold 20px monospace" : "16px monospace";
+            
+            const char = isSecret ? levels[currentLevel].a.charAt(Math.floor(Date.now()/200)%4) : "0123456789";
+            ctx.fillText(char[Math.floor(Math.random()*char.length)], i * 16, drops[i] * 16);
+            
+            if (drops[i] * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
             drops[i]++;
         }
     }
-    setInterval(draw, 35);
-    updateLevel();
+    setInterval(draw, 40);
+    loadLevel();
 </script>
 </body>
 </html>
