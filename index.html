@@ -18,8 +18,6 @@
         .btn-action:hover { background: var(--main); color: white; }
         .flick-target { font-size: 3rem; cursor: pointer; display: inline-block; transition: transform 0.1s; filter: grayscale(100%); }
         .flick-target:active { transform: translateY(10px); filter: grayscale(0%); }
-        
-        /* Shake animation for wrong answers */
         .shake { animation: shake 0.4s; }
         @keyframes shake {
             0% { transform: translateX(0); }
@@ -36,11 +34,9 @@
 
 <div id="game-container">
     <div id="output"></div>
-    
     <div id="input-area" class="ui-mode">
         <span>[APPU@AUTH] ~ > </span><input type="text" id="user-input" autocomplete="off" autofocus>
     </div>
-
     <div id="interaction-area" class="ui-mode hidden" style="text-align:center;">
         <div id="interact-content"></div>
     </div>
@@ -57,28 +53,28 @@
     let currentLevel = 0;
 
     const levels = [
-        { type: "text", q: "INITIALIZING... Name of the 22-year-old subject?", a: "chandana" },
-        { type: "text", q: "LEVEL 2: Identity confirmed. What kind of 'First Copy' are you?", a: "chinese" },
+        { type: "text", q: "INITIALIZING... Name of the 22-year-old subject?", a: ["chandana"] },
+        { type: "text", q: "LEVEL 2: Identity confirmed. What kind of 'First Copy' are you?", a: ["chinese"] },
         { type: "choice", q: "LEVEL 3: Memory Log: Where did Appu first correct your lecture?", choices: ["Library", "In Class", "Canteen"], correct: "In Class" },
         { type: "flick", q: "LEVEL 4: SYSTEM ALERT. Appu is being annoying. Flick his head 10 times to proceed.", a: 10 },
-        { type: "glitch", q: "LEVEL 5: Look at the falling data. Locate the secret 4-digit code in CYAN.", a: "1024" },
-        { type: "text", q: "LEVEL 6: What does this 'Genius' call you when he's being sweet?", a: "soully" , "coco" },
+        { type: "glitch", q: "LEVEL 5: Look at the falling data. Locate the secret 4-digit code in CYAN.", a: ["1024"] },
+        { type: "text", q: "LEVEL 6: What does this 'Genius' call you when he's being sweet?", a: ["soully", "coco"] },
         { type: "choice", q: "LEVEL 7: Which exam almost destroyed our sanity last sem?", choices: ["Marine Design", "Ship Stability", "English"], correct: "Marine Design" },
-        { type: "text", q: "LEVEL 8: Heat Transfer was tough. What is the unit of Thermal Conductivity?", a: "w/mk" },
+        { type: "text", q: "LEVEL 8: Heat Transfer was tough. What is the unit of Thermal Conductivity?", a: ["w/mk"] },
         { type: "click", q: "LEVEL 9: Brute force needed. Mash the button 22 times.", a: 22 },
-        { type: "text", q: "LEVEL 10: Appu and you started a series then left it. Name it.", a: "dark" },
+        { type: "text", q: "LEVEL 10: Appu and you started a series then left it. Name it.", a: ["dark"] },
         { type: "choice", q: "LEVEL 11: Describe Coco's laugh in one word.", choices: ["Musical", "Heavenly", "Worst"], correct: "Worst" },
-        { type: "text", q: "LEVEL 12: Binary Code: 01000010 01000110 01000110", a: "bff" },
+        { type: "text", q: "LEVEL 12: Binary Code: 01000010 01000110 01000110", a: ["bff"] },
         { type: "flick", q: "LEVEL 13: Appu is being annoying again. Flick his head 15 times this time.", a: 15 },
-        { type: "text", q: "LEVEL 14: WHEN IS APPU'S BIRTHDAY!!!!!! (dd/mm/yyyy)", a: "14/05/2004" },
+        { type: "text", q: "LEVEL 14: WHEN IS APPU'S BIRTHDAY!!!!!! (dd/mm/yyyy)", a: ["14/05/2004"] },
         { type: "choice", q: "LEVEL 15: If Appu is a 'Genius', what is Coco?", choices: ["Junior", "Senpai", "Assistant"], correct: "Senpai" },
-        { type: "text", q: "LEVEL 16: What is the name he calls you when you are being stupid.", a: "dumbo" },
-        { type: "glitch", q: "LEVEL 17: New data stream detected. Find the CYAN code.", a: "2026" },
+        { type: "text", q: "LEVEL 16: What is the name he calls you when you are being stupid.", a: ["dumbo"] },
+        { type: "glitch", q: "LEVEL 17: New data stream detected. Find the CYAN code.", a: ["2026"] },
         { type: "choice", q: "LEVEL 18: What's the best way to wake Appu up?", choices: ["Call him", "Flick his head", "Send memes"], correct: "Flick his head" },
-        { type: "text", q: "LEVEL 19: You are my bestie. Type 'AGREED' to confirm.", a: "agreed" },
+        { type: "text", q: "LEVEL 19: You are my bestie. Type 'AGREED' to confirm.", a: ["agreed"] },
         { type: "click", q: "LEVEL 20: Almost there. Override the final security gate (30 clicks).", a: 30 },
-        { type: "text", q: "LEVEL 21: Who is the most amazing Chinese First Copy in the world?", a: "chandana", "me" ,"coco" },
-        { type: "text", q: "FINAL LEVEL: Type 'HAPPY BIRTHDAY' to unlock the core.", a: "happy birthday" }
+        { type: "text", q: "LEVEL 21: Who is the most amazing Chinese First Copy in the world?", a: ["chandana", "me", "coco"] },
+        { type: "text", q: "FINAL LEVEL: Type 'HAPPY BIRTHDAY' to unlock the core.", a: ["happy birthday"] }
     ];
 
     async function loadLevel() {
@@ -104,8 +100,6 @@
             });
         } else if (lvl.type === "flick" || lvl.type === "click") {
             interactionArea.classList.remove('hidden');
-            const b = document.createElement('button');
-            b.className = 'btn-action';
             const head = document.createElement('div');
             head.className = 'flick-target';
             head.innerHTML = lvl.type === "flick" ? "👨🏻‍💻" : "🛡️"; 
@@ -123,15 +117,12 @@
     }
 
     function handleWrong() {
-        // Remove existing error if any
         const oldError = document.querySelector('.error-text');
         if (oldError) oldError.remove();
-
         const err = document.createElement('p');
         err.className = 'error-text';
         err.innerText = "[ACCESS DENIED] - TRY AGAIN, SOULLY.";
         output.appendChild(err);
-
         container.classList.add('shake');
         setTimeout(() => container.classList.remove('shake'), 400);
     }
@@ -139,7 +130,8 @@
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const val = input.value.toLowerCase().trim();
-            if (val === levels[currentLevel].a.toLowerCase()) {
+            const possibleAnswers = levels[currentLevel].a;
+            if (Array.isArray(possibleAnswers) && possibleAnswers.includes(val)) {
                 input.value = '';
                 nextLevel();
             } else {
@@ -193,7 +185,7 @@
             const isSecret = levels[currentLevel]?.type === "glitch" && i === 12;
             ctx.fillStyle = isSecret ? "#00ffff" : "#ff66cc";
             ctx.font = isSecret ? "bold 24px monospace" : "15px monospace";
-            const char = isSecret ? levels[currentLevel].a.charAt(Math.floor(Date.now()/1000)%4) : "0123456789";
+            const char = isSecret ? levels[currentLevel].a[0].charAt(Math.floor(Date.now()/1000)%4) : "0123456789";
             ctx.fillText(char, i * 20, drops[i] * 20);
             if (drops[i] * 20 > canvas.height && Math.random() > 0.985) drops[i] = 0;
             drops[i]++;
