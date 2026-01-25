@@ -5,16 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CHANDANA_PROTOCOL_V22</title>
     <style>
-        :root { --main: #ff66cc; --bg: #0d000d; }
+        :root { --main: #ff66cc; --cyan: #00ffff; --bg: #0d000d; }
         body { background-color: var(--bg); color: var(--main); font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        #game-container { width: 90%; max-width: 700px; border: 2px solid var(--main); padding: 30px; background: rgba(10, 0, 10, 0.9); z-index: 10; position: relative; box-shadow: 0 0 25px #ff33aa; }
+        #game-container { width: 90%; max-width: 650px; border: 2px solid var(--main); padding: 30px; background: rgba(10, 0, 10, 0.95); z-index: 10; position: relative; box-shadow: 0 0 20px #ff33aa; }
         canvas { position: fixed; top: 0; left: 0; z-index: 1; opacity: 0.3; }
         input { background: transparent; border: none; color: #fff; font-family: 'Courier New', monospace; font-size: 1.2rem; width: 100%; outline: none; border-bottom: 1px solid var(--main); margin-top: 10px; }
-        .system-msg { color: #888; font-size: 0.8rem; }
-        .level-header { color: #00ffff; font-weight: bold; margin-bottom: 5px; }
+        .system-msg { color: #555; font-size: 0.75rem; margin-bottom: 10px; }
+        .level-header { color: var(--cyan); font-weight: bold; margin-bottom: 15px; line-height: 1.4; }
         .hidden { display: none !important; }
-        .btn-mash { background: var(--main); color: white; border: none; padding: 10px 20px; cursor: pointer; font-family: inherit; margin-top: 10px; }
-        #output { min-height: 250px; }
+        .btn-action { background: transparent; border: 1px solid var(--main); color: var(--main); padding: 10px 20px; cursor: pointer; font-family: inherit; margin: 10px auto; display: block; transition: 0.2s; }
+        .btn-action:hover { background: var(--main); color: white; }
+        .flick-target { font-size: 3rem; cursor: pointer; display: inline-block; transition: transform 0.1s; filter: grayscale(100%); }
+        .flick-target:active { transform: translateY(10px); filter: grayscale(0%); }
     </style>
 </head>
 <body>
@@ -24,13 +26,12 @@
 <div id="game-container">
     <div id="output"></div>
     
-    <div id="input-area" class="input-line">
+    <div id="input-area" class="ui-mode">
         <span>[APPU@AUTH] ~ > </span><input type="text" id="user-input" autocomplete="off" autofocus>
     </div>
 
-    <div id="click-area" class="hidden">
-        <button id="mash-btn" class="btn-mash">OVERRIDE SYSTEM</button>
-        <p id="mash-count" style="font-size: 0.8rem; color: #888;"></p>
+    <div id="interaction-area" class="ui-mode hidden" style="text-align:center;">
+        <div id="interact-content"></div>
     </div>
 </div>
 
@@ -38,80 +39,101 @@
     const input = document.getElementById('user-input');
     const output = document.getElementById('output');
     const inputArea = document.getElementById('input-area');
-    const clickArea = document.getElementById('click-area');
-    const mashBtn = document.getElementById('mash-btn');
-    
-    let currentLevel = 0;
-    let clickCount = 0;
+    const interactionArea = document.getElementById('interaction-area');
+    const interactContent = document.getElementById('interact-content');
 
-    /* --- LEVEL DEFINITIONS ---
-       type: "text" (standard riddle)
-       type: "glitch" (find number in matrix rain)
-       type: "click" (mash the button)
-    */
+    let currentLevel = 0;
+
     const levels = [
-        { type: "text", q: "INITIALIZING... IDENTIFY SUBJECT. (What does Appu call you?)", a: "coco" },
-        { type: "text", q: "LEVEL 2: How many years of Senpai-energy have we reached today?", a: "22" },
-        { type: "click", q: "LEVEL 3: SYSTEM STUCK. Force override by clicking the button 22 times.", a: 22 },
-        { type: "text", q: "LEVEL 4: Binary Challenge. 01000010 01000110 01000110", a: "bff" },
-        { type: "glitch", q: "LEVEL 5: Look into the data stream. A 4-digit key is falling in CYAN.", a: "2004" },
-        { type: "text", q: "LEVEL 6: What was the name of that show we talked about?", a: "stranger things" },
-        // ... Add more until you hit 22!
+        { type: "text", q: "INITIALIZING... Name of the 22-year-old subject?", a: "chandana" },
+        { type: "text", q: "LEVEL 2: Identity confirmed. What kind of 'First Copy' are you?", a: "chinese" },
+        { type: "choice", q: "LEVEL 3: Memory Log: Where did Appu first correct your lecture?", choices: ["Library", "In Class", "Canteen"], correct: "In Class" },
+        { type: "flick", q: "LEVEL 4: SYSTEM ALERT. Appu is being annoying. Flick his head 10 times to proceed.", a: 10 },
+        { type: "glitch", q: "LEVEL 5: Look at the falling data. Locate the secret 4-digit code in CYAN.", a: "1024" },
+        { type: "text", q: "LEVEL 6: What does this 'Genius' call you when he's being sweet?", a: "soully" },
+        { type: "choice", q: "LEVEL 7: Which exam almost destroyed our sanity last sem?", choices: ["Marine Design", "Ship Stability", "English"], correct: "Marine Design" },
+        { type: "text", q: "LEVEL 8: Heat Transfer was tough. What is the unit of Thermal Conductivity? (Physics check!)", a: "w/mk" },
+        { type: "click", q: "LEVEL 9: Brute force needed. Mash the button 22 times for your 22 years.", a: 22 },
+        { type: "text", q: "LEVEL 10: I binge-watched 5 seasons of this for you. Name it.", a: "stranger things" },
+        { type: "choice", q: "LEVEL 11: Describe Coco's laugh in one word.", choices: ["Musical", "Heavenly", "Worst"], correct: "Worst" },
+        { type: "text", q: "LEVEL 12: Binary Code: 01000010 01000110 01000110", a: "bff" },
+        { type: "flick", q: "LEVEL 13: You're teasing me again. Flick my head 15 times this time.", a: 15 },
+        { type: "text", q: "LEVEL 14: What is the device codename I'm always building ROMs for?", a: "porsche" },
+        { type: "choice", q: "LEVEL 15: If Appu is a 'Genius', what is Coco?", a: "Senpai", choices: ["Junior", "Senpai", "Assistant"], correct: "Senpai" },
+        { type: "text", q: "LEVEL 16: What was the secret 'inside joke' word from the first version of this game?", a: "taco" },
+        { type: "glitch", q: "LEVEL 17: New data stream detected. Find the CYAN code.", a: "2026" },
+        { type: "choice", q: "LEVEL 18: What's the best way to wake Appu up?", choices: ["Call him", "Flick his head", "Send memes"], correct: "Flick his head" },
+        { type: "text", q: "LEVEL 19: You are my bestie. Type 'AGREED' to confirm.", a: "agreed" },
+        { type: "click", q: "LEVEL 20: Almost there. Override the final security gate (30 clicks).", a: 30 },
+        { type: "text", q: "LEVEL 21: Who is the most amazing Chinese First Copy in the world?", a: "chandana" },
+        { type: "text", q: "FINAL LEVEL: Type 'HAPPY BIRTHDAY' to unlock the core.", a: "happy birthday" }
     ];
 
-    // Helper to fill remaining levels for your test
-    while(levels.length < 22) {
-        levels.push({ type: "text", q: `LEVEL ${levels.length + 1}: Security Bypass. Type 'pass'`, a: "pass" });
-    }
-
     async function loadLevel() {
-        output.innerHTML = `<p class="system-msg">[LEVEL ${currentLevel + 1}/22]</p>`;
+        output.innerHTML = `<p class="system-msg">[ENCRYPTION LAYER: ${currentLevel + 1}/22]</p>`;
         const lvl = levels[currentLevel];
-        
         await typeLine(`> ${lvl.q}`, "level-header");
 
-        // UI Logic based on type
-        if (lvl.type === "click") {
-            inputArea.classList.add('hidden');
-            clickArea.classList.remove('hidden');
-            clickCount = 0;
-            document.getElementById('mash-count').innerText = `Clicks: 0/${lvl.a}`;
-        } else {
+        inputArea.classList.add('hidden');
+        interactionArea.classList.add('hidden');
+        interactContent.innerHTML = "";
+
+        if (lvl.type === "text" || lvl.type === "glitch") {
             inputArea.classList.remove('hidden');
-            clickArea.classList.add('hidden');
             input.focus();
+        } else if (lvl.type === "choice") {
+            interactionArea.classList.remove('hidden');
+            lvl.choices.forEach(choice => {
+                const b = document.createElement('button');
+                b.className = 'btn-action';
+                b.innerText = choice;
+                b.onclick = () => choice === lvl.correct ? nextLevel() : alert("Wrong! Appu is disappointed.");
+                interactContent.appendChild(b);
+            });
+        } else if (lvl.type === "flick") {
+            interactionArea.classList.remove('hidden');
+            const head = document.createElement('div');
+            head.className = 'flick-target';
+            head.innerHTML = "👨🏻‍💻"; 
+            let count = 0;
+            const label = document.createElement('p');
+            label.innerText = `Flicks: 0/${lvl.a}`;
+            head.onclick = () => {
+                count++;
+                label.innerText = `Flicks: ${count}/${lvl.a}`;
+                if(count >= lvl.a) nextLevel();
+            };
+            interactContent.appendChild(head);
+            interactContent.appendChild(label);
+        } else if (lvl.type === "click") {
+            interactionArea.classList.remove('hidden');
+            const b = document.createElement('button');
+            b.className = 'btn-action';
+            let count = 0;
+            b.innerText = `BRUTE FORCE (${count}/${lvl.a})`;
+            b.onclick = () => {
+                count++;
+                b.innerText = `BRUTE FORCE (${count}/${lvl.a})`;
+                if(count >= lvl.a) nextLevel();
+            };
+            interactContent.appendChild(b);
         }
     }
 
-    // Pattern Logic: Button Mash
-    mashBtn.onclick = () => {
-        clickCount++;
-        document.getElementById('mash-count').innerText = `Clicks: ${clickCount}/${levels[currentLevel].a}`;
-        if (clickCount >= levels[currentLevel].a) {
-            nextLevel();
-        }
-    };
-
-    // Pattern Logic: Text Entry
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const val = input.value.toLowerCase().trim();
             if (val === levels[currentLevel].a.toLowerCase()) {
                 input.value = '';
                 nextLevel();
-            } else {
-                typeLine("[ERROR] DENIED", "error");
             }
         }
     });
 
     async function nextLevel() {
         currentLevel++;
-        if (currentLevel >= 22) {
-            showWin();
-        } else {
-            loadLevel();
-        }
+        if (currentLevel >= 22) showWin();
+        else loadLevel();
     }
 
     function typeLine(text, className) {
@@ -124,44 +146,42 @@
                 p.innerHTML += text.charAt(i);
                 i++;
                 if (i >= text.length) { clearInterval(interval); res(); }
-            }, 20);
+            }, 30);
         });
     }
 
     function showWin() {
         document.getElementById('game-container').innerHTML = `
-            <div style="text-align:center">
-                <h1 style="color:white; text-shadow: 0 0 20px #ff00ff;">🔓 OVERRIDE COMPLETE</h1>
-                <p>Happy 22nd Birthday, Chandana!</p>
-                <p>You've successfully hacked into my heart (cheesy, I know).</p>
-                <p>- Appu</p>
+            <div style="text-align:center; padding: 20px;">
+                <h1 style="color:white; text-shadow: 0 0 15px #ff00ff;">🔓 OVERRIDE COMPLETE</h1>
+                <hr style="border: 0.5px solid var(--main)">
+                <h2 style="color: var(--cyan);">HAPPY 22ND BIRTHDAY, CHANDANA!</h2>
+                <p>You've successfully hacked into Year 22.</p>
+                <p>To my Soully, my Senpai, and the girl with the "worst" laugh—stay amazing.</p>
+                <p style="margin-top:20px; font-weight:bold;">- Your Genius, Appu</p>
             </div>
         `;
     }
 
-    // Matrix Background Logic
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    const drops = Array(Math.floor(canvas.width / 16)).fill(1);
+    const drops = Array(Math.floor(canvas.width / 20)).fill(1);
 
     function draw() {
-        ctx.fillStyle = "rgba(13, 0, 13, 0.1)";
+        ctx.fillStyle = "rgba(13, 0, 13, 0.2)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
         for (let i = 0; i < drops.length; i++) {
-            const isSecret = levels[currentLevel]?.type === "glitch" && i === 10;
+            const isSecret = levels[currentLevel]?.type === "glitch" && i === 12;
             ctx.fillStyle = isSecret ? "#00ffff" : "#ff66cc";
-            ctx.font = isSecret ? "bold 20px monospace" : "16px monospace";
-            
-            const char = isSecret ? levels[currentLevel].a.charAt(Math.floor(Date.now()/200)%4) : "0123456789";
-            ctx.fillText(char[Math.floor(Math.random()*char.length)], i * 16, drops[i] * 16);
-            
-            if (drops[i] * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            ctx.font = isSecret ? "bold 24px monospace" : "15px monospace";
+            const char = isSecret ? levels[currentLevel].a.charAt(Math.floor(Date.now()/1000)%4) : "0123456789";
+            ctx.fillText(char, i * 20, drops[i] * 20);
+            if (drops[i] * 20 > canvas.height && Math.random() > 0.985) drops[i] = 0;
             drops[i]++;
         }
     }
-    setInterval(draw, 40);
+    setInterval(draw, 120); 
     loadLevel();
 </script>
 </body>
