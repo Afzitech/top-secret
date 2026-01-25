@@ -3,152 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL_OVERRIDE_V6.0</title>
+    <title>CHANDANA_PROTOCOL_22</title>
     <style>
-        body { background-color: #000; color: #33ff33; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        #game-container { width: 85%; max-width: 600px; border: 2px solid #33ff33; padding: 30px; background: rgba(0, 5, 0, 0.9); z-index: 10; position: relative; box-shadow: 0 0 20px #00ff00; pointer-events: none; }
-        #game-container * { pointer-events: auto; }
-        canvas { position: fixed; top: 0; left: 0; z-index: 1; }
-        input { background: transparent; border: none; color: #33ff33; font-family: 'Courier New', monospace; font-size: 1.2rem; width: 100%; outline: none; caret-color: white; border-bottom: 1px solid #33ff33; margin-top: 10px; }
+        body { background-color: #0d000d; color: #ff66cc; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        #game-container { width: 90%; max-width: 700px; border: 2px solid #ff66cc; padding: 30px; background: rgba(10, 0, 10, 0.9); z-index: 10; position: relative; box-shadow: 0 0 25px #ff33aa; }
+        canvas { position: fixed; top: 0; left: 0; z-index: 1; opacity: 0.3; }
+        input { background: transparent; border: none; color: #fff; font-family: 'Courier New', monospace; font-size: 1.2rem; width: 100%; outline: none; border-bottom: 1px solid #ff66cc; margin-top: 10px; }
         .error { color: #ff3333; font-weight: bold; }
         .system-msg { color: #888; font-size: 0.8rem; }
-        .hidden { display: none; }
-        .prize-text { color: #FF3333; text-shadow: 0 0 10px #FF3333; text-align: center; }
+        .level-header { color: #00ffff; font-weight: bold; }
+        .prize-text { color: #fff; text-shadow: 0 0 10px #ff00ff; text-align: center; }
+        #output { min-height: 200px; }
     </style>
 </head>
 <body>
 
-<canvas id="matrix-canvas" class="hidden"></canvas>
+<canvas id="matrix-canvas"></canvas>
 
 <div id="game-container">
-    <div id="output">
-        <p class="system-msg">[SYSTEM] LINK ESTABLISHED...</p>
-        <p class="system-msg">[SYSTEM] SECURITY PROTOCOL: RED_GLITCH_V6</p>
-        <div id="level-content">
-            <p><strong>> LEVEL 1: IDENTITY VERIFICATION</strong></p>
-            <p>Enter our secret "inside joke" word to bypass the firewall:</p>
-        </div>
-    </div>
+    <div id="output"></div>
     <div id="input-line">
-        <span>> </span><input type="text" id="user-input" autocomplete="off" autofocus>
+        <span>[APPU@TERMINAL] ~ > </span><input type="text" id="user-input" autocomplete="off" autofocus>
     </div>
 </div>
 
 <script>
     const input = document.getElementById('user-input');
     const output = document.getElementById('output');
-    const levelContent = document.getElementById('level-content');
-    const canvas = document.getElementById('matrix-canvas');
-    let currentLevel = 1;
+    let currentLevel = 0;
 
-    // --- CONFIGURATION ---
-    const LVL1_ANSWER = "taco"; 
-    const LVL2_ANSWER = "1024"; 
-    const LVL3_ANSWER = "bff";
+    // --- CONFIGURATION: EDIT THESE 22 ANSWERS ---
+    const levels = [
+        { q: "INITIALIZING... IDENTIFY SUBJECT. (What does Appu call you?)", a: "coco" }, // or "senpai"
+        { q: "VERIFYING AGE... LEVEL 2: How many years have you graced this planet?", a: "22" },
+        { q: "MEMORIAL_LOG_03: What was our first inside joke word?", a: "taco" },
+        { q: "LEVEL 4: Fill in the blank: Best ____ Forever.", a: "friends" },
+        { q: "LEVEL 5: Binary challenge! 01000010 01000110 01000110", a: "bff" },
+        { q: "LEVEL 6: Enter the password found in the data stream (Look at the background!)", a: "1024" },
+        { q: "LEVEL 7: Which month were you born in?", a: "january" },
+        // Add more specific questions here...
+        { q: "LEVEL 21: Final check. Who is the best Senpai in the world?", a: "chandana" },
+        { q: "LEVEL 22: Type 'HAPPY BIRTHDAY' to unlock the core.", a: "happy birthday" }
+    ];
 
-    input.addEventListener('keydown', (e) => {
+    // Dummy levels to fill up to 22 if you don't have 22 questions yet
+    while(levels.length < 22) {
+        levels.splice(levels.length - 2, 0, { q: `SECURITY BYPASS LEVEL ${levels.length + 1}: Type 'pass'`, a: "pass" });
+    }
+
+    function typeLine(text, className = "") {
+        const p = document.createElement('p');
+        p.className = className;
+        output.appendChild(p);
+        let i = 0;
+        return new Promise(res => {
+            function type() {
+                if (i < text.length) {
+                    p.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, 20);
+                } else { res(); }
+            }
+            type();
+        });
+    }
+
+    async function updateLevel() {
+        output.innerHTML = `<p class="system-msg">[SYSTEM] ENCRYPTION LAYER ${currentLevel + 1}/22</p>`;
+        await typeLine(`> ${levels[currentLevel].q}`, "level-header");
+    }
+
+    input.addEventListener('keydown', async (e) => {
         if (e.key === 'Enter') {
             const val = input.value.toLowerCase().trim();
             input.value = '';
-            checkAnswer(val);
+            
+            if (val === levels[currentLevel].a.toLowerCase()) {
+                currentLevel++;
+                if (currentLevel >= 22) {
+                    showFinalPrize();
+                } else {
+                    await typeLine("[SUCCESS] ACCESS GRANTED.", "system-msg");
+                    updateLevel();
+                }
+            } else {
+                const err = document.createElement('p');
+                err.className = 'error';
+                err.innerHTML = "> [ERROR] INCORRECT KEY. TRY AGAIN, COCO.";
+                output.appendChild(err);
+            }
         }
     });
 
-    function checkAnswer(val) {
-        if (currentLevel === 1 && val === LVL1_ANSWER.toLowerCase()) {
-            startLevel2();
-        } else if (currentLevel === 2 && val === LVL2_ANSWER) {
-            startLevel3();
-        } else if (currentLevel === 3 && val === LVL3_ANSWER.toLowerCase()) {
-            showPrize();
-        } else {
-            const errorMsg = document.createElement('p');
-            errorMsg.className = 'error';
-            errorMsg.innerHTML = '> [ERROR] ACCESS DENIED';
-            output.appendChild(errorMsg);
-        }
-    }
-
-    function startLevel2() {
-        currentLevel = 2;
-        levelContent.innerHTML = `
-            <p>[SUCCESS] LEVEL 1 BYPASSED.</p>
-            <p><strong>> LEVEL 2: THE DATA HUNT</strong></p>
-            <p>CRITICAL ERROR: A RED system key is falling in the data stream. Locate it and enter it below.</p>
-        `;
-        canvas.classList.remove('hidden');
-        initMatrix();
-    }
-
-    function initMatrix() {
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        
-        const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ$#@%";
-        const fontSize = 18;
-        const columns = Math.floor(canvas.width / fontSize);
-        const drops = Array(columns).fill(1);
-
-        // Pick 2 random columns to show the red secret code (to make it easier to find)
-        const secretCol1 = Math.floor(Math.random() * columns);
-        const secretCol2 = Math.floor(Math.random() * columns);
-
-        function draw() {
-            // Lighter black overlay so green stays bright
-            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            for (let i = 0; i < drops.length; i++) {
-                let text;
-                
-                if (i === secretCol1 || i === secretCol2) {
-                    ctx.fillStyle = "#FF0000"; // BRIGHT RED
-                    ctx.font = "bold 22px Courier New";
-                    // Cycle through the 4 digits of the answer
-                    text = LVL2_ANSWER.charAt(Math.floor(Date.now() / 150) % 4);
-                } else {
-                    ctx.fillStyle = "#00FF41"; // VIBRANT MATRIX GREEN
-                    ctx.font = fontSize + "px Courier New";
-                    text = letters.charAt(Math.floor(Math.random() * letters.length));
-                }
-
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
-            }
-        }
-        setInterval(draw, 50);
-    }
-
-    function startLevel3() {
-        currentLevel = 3;
-        canvas.classList.add('hidden'); 
-        levelContent.innerHTML = `
-            <p>[SUCCESS] LEVEL 2 BYPASSED.</p>
-            <p><strong>> LEVEL 3: BINARY DECODER</strong></p>
-            <p>Convert the binary string to a 3-letter word:</p>
-            <p style="color: #00FF00; font-size: 1.4rem; letter-spacing: 5px; font-weight: bold; text-align:center;">01000010 01000110 01000110</p>
-            <p class="system-msg">(Hint: 01000010=B, 01000110=F)</p>
-        `;
-    }
-
-    function showPrize() {
-        document.getElementById('input-line').classList.add('hidden');
-        levelContent.innerHTML = "";
+    function showFinalPrize() {
+        document.getElementById('input-line').style.display = 'none';
         output.innerHTML = `
-            <h1 class="prize-text">🔓 SYSTEM OVERRIDE COMPLETE</h1>
-            <hr style="border: 1px solid #33ff33;">
-            <p style="text-align: center; font-size: 1.2rem; line-height: 1.5;">
-                "You cracked the hardest encryption I have! <br><br> 
-                 You're an absolute legend."
-            </p>
+            <div class="prize-text">
+                <h1>🔓 ACCESS GRANTED: THE HEART CORE</h1>
+                <hr>
+                <h2>HAPPY 22ND BIRTHDAY CHANDANA!</h2>
+                <p>From "Appu" with love.</p>
+                <p style="font-size: 0.8rem;">You are the best Senpai anyone could ask for.</p>
+            </div>
         `;
-        document.body.style.backgroundColor = "#050000"; // Dark red tint
+        document.body.style.backgroundColor = "#220022";
     }
+
+    // Matrix Background (Pink themed)
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const letters = "CHANDANACOCO22APPU";
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function draw() {
+        ctx.fillStyle = "rgba(13, 0, 13, 0.1)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ff66cc";
+        ctx.font = fontSize + "px monospace";
+        for (let i = 0; i < drops.length; i++) {
+            const text = letters.charAt(Math.floor(Math.random() * letters.length));
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+        }
+    }
+    setInterval(draw, 35);
+    updateLevel();
 </script>
 </body>
 </html>
